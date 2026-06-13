@@ -1,5 +1,5 @@
-const User    = require("../models/User");
-const Product = require("../models/Product");
+const User    = require("../models/userSchema");
+const Product = require("../models/productSchema");
 const {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -10,7 +10,7 @@ const {
   sendVendorApprovedEmail,
   sendVendorRejectedEmail,
   sendVendorSuspendedEmail,
-} = require("../utils/vendorEmailUtils");
+} = require("../utils/vendor.email.utiles");
 
 // ═══════════════════════════════════════════════════════════════
 // @desc    Apply to become a vendor

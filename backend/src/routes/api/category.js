@@ -57,8 +57,8 @@ const updateValidation = [
 
 router.get("/tree",     getCategoryTree);
 router.get("/featured", getFeaturedCategories);
-router.get("/categori_show", getAllCategories);
-router.get("/:idOrSlug", getCategory);
+router.get("/", getAllCategories);
+
 
 // ══════════════════════════════════════════════════════
 //  PRIVATE ROUTES — Admin only
@@ -74,10 +74,12 @@ router.get("/:idOrSlug", getCategory);
 router.use(protect, authorize("admin")); // all routes below require admin
 
 router.get("/admin/stats", getCategoryStats);
-router.post("/create_category", upload.single('image'), createValidation, createCategory);
+router.post("/", upload.single('image'), createValidation, createCategory);
 router.put("/reorder",reorderCategories);
 router.put("/:id", upload.single('image'), updateValidation, updateCategory);
 router.patch("/:id/toggle", toggleCategoryStatus);
 router.delete("/:id",deleteCategory);
+
+router.get("/:idOrSlug", getCategory);
 
 module.exports = router;
