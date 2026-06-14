@@ -336,7 +336,7 @@ const updateProduct = async (req, res) => {
       "name", "description", "shortDescription", "price",
       "discountPrice", "stock", "sku", "tags", "hasVariants",
       "variants", "shipping", "metaTitle", "metaDescription",
-      "images", "subcategory", "lowStockThreshold",
+      "subcategory", "lowStockThreshold",
     ];
 
     allowedFields.forEach((field) => {
@@ -344,6 +344,23 @@ const updateProduct = async (req, res) => {
         product[field] = req.body[field];
       }
     });
+
+    // Handle image uploads
+    if (req.files && req.files.length > 0) {
+      const uploadedImages = await Promise.all(
+        req.files.map(async (file) => {
+          const img = await uploadImage(file.path);
+          return {
+            url: img.secure_url,
+            publicId: img.public_id,
+          };
+        })
+      );
+      product.images = uploadedImages;
+    } else if (req.body.images && Array.isArray(req.body.images)) {
+      // If no new files but images array is provided in body, use it
+      product.images = req.body.images;
+    }
 
     // Category change — update commission rate
     if (req.body.category && req.body.category !== product.category.toString()) {

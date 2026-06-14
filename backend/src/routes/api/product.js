@@ -91,7 +91,7 @@ router.get("/:idOrSlug",   getProduct);
 
 router.post(  "/add", protect, authorize("vendor"), upload.array("images", 5), productValidation, createProduct);
 router.get(   "/vendor/my-products",    protect, authorize("vendor"), getMyProducts);
-router.put(   "/:id", protect, authorize("vendor", "admin"), updateProduct);
+router.put(   "/:id", protect, authorize("vendor", "admin"), upload.array("images", 5), updateProduct);
 router.delete("/:id", protect, authorize("vendor", "admin"), deleteProduct);
 
 // ══════════════════════════════════════════════════════
