@@ -122,7 +122,7 @@ export default function VendorProductsPage() {
                   <td className="px-4 py-3 text-gray-600">{p.salesCount || 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5">
-                      <Link href={`/vendor/products/edit/${p._id}`}>
+                      <Link href={`/vendor/edit_product/${p._id}`}>
                         <Button variant="secondary" size="xs">Edit</Button>
                       </Link>
                       <Button variant="ghost" size="xs" onClick={() => setDelConfirm({ open: true, id: p._id })}>Delete</Button>
