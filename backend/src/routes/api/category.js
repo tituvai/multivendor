@@ -35,7 +35,7 @@ const validate = (req, res, next) => {
 const createValidation = [
   body("name").trim().notEmpty().withMessage("Name is required").isLength({ max: 80 }).withMessage("Max 80 characters"),
   body("commission").optional().isFloat({ min: 0, max: 100 }).withMessage("Commission must be 0–100"),
-  body("parent").optional({ nullable: true }).isMongoId().withMessage("Invalid parent ID"),
+  body("parent").optional({ nullable: true, checkFalsy: true }).isMongoId().withMessage("Invalid parent ID"),
   validate,
 ];
 
@@ -43,6 +43,7 @@ const updateValidation = [
   param("id").isMongoId().withMessage("Invalid category ID"),
   body("name").optional().trim().notEmpty().withMessage("Name cannot be empty").isLength({ max: 80 }),
   body("commission").optional().isFloat({ min: 0, max: 100 }).withMessage("Commission must be 0–100"),
+  body("parent").optional({ nullable: true, checkFalsy: true }).isMongoId().withMessage("Invalid parent ID"),
   validate,
 ];
 
@@ -58,6 +59,7 @@ const updateValidation = [
 router.get("/tree",     getCategoryTree);
 router.get("/featured", getFeaturedCategories);
 router.get("/", getAllCategories);
+router.get("/:idOrSlug", getCategory);
 
 
 // ══════════════════════════════════════════════════════
@@ -79,7 +81,5 @@ router.put("/reorder",reorderCategories);
 router.put("/:id", upload.single('image'), updateValidation, updateCategory);
 router.patch("/:id/toggle", toggleCategoryStatus);
 router.delete("/:id",deleteCategory);
-
-router.get("/:idOrSlug", getCategory);
 
 module.exports = router;

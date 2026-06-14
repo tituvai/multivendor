@@ -23,7 +23,7 @@ export const authAPI = {
 export const productAPI = {
   getAll:       (params) => API.get("/products", { params }),
   getOne:       (slug)   => API.get(`/products/${slug}`),
-  create:       (data)   => API.post("/products", data, { headers: { "Content-Type": "multipart/form-data" } }),
+  create:       (data)   => API.post("/products/add", data, { headers: { "Content-Type": "multipart/form-data" } }),
   update:       (id, data) => API.put(`/products/${id}`, data, { headers: { "Content-Type": "multipart/form-data" } }),
   delete:       (id)     => API.delete(`/products/${id}`),
   getMyProducts:(params) => API.get("/products/vendor/my-products", { params }),
@@ -45,13 +45,13 @@ export const categoryAPI = {
   getOne:      (slug)   => API.get(`/categories/${slug}`),
   create:      (data)   => {
     if (typeof FormData !== "undefined" && data instanceof FormData) {
-      return API.post("/categories", data, { headers: { "Content-Type": "multipart/form-data" } });
+      return API.post("/categories", data);
     }
     return API.post("/categories", data);
   },
   update:      (id, data) => {
     if (typeof FormData !== "undefined" && data instanceof FormData) {
-      return API.put(`/categories/${id}`, data, { headers: { "Content-Type": "multipart/form-data" } });
+      return API.put(`/categories/${id}`, data);
     }
     return API.put(`/categories/${id}`, data);
   },

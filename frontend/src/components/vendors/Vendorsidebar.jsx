@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 const NAV = [
   { label: "Dashboard",  href: "/vendor/dashboard",  icon: "📊" },
   { label: "Products",   href: "/vendor/products",   icon: "📦" },
-  { label: "Add Product",href: "/vendor/products/add",icon: "➕" },
+  { label: "Add Product",href: "/vendor/add_product",icon: "➕" },
   { label: "Orders",     href: "/vendor/orders",     icon: "🛒" },
   { label: "Analytics",  href: "/vendor/analytics",  icon: "📈" },
   { label: "Profile",    href: "/vendor/profile",    icon: "🏪" },

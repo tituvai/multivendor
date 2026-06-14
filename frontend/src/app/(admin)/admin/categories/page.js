@@ -53,6 +53,8 @@ export default function AdminCategoriesPage() {
   const onSubmit = async (data) => {
     setActionLoading(true);
     try {
+      const isUpdate = !!formModal.category;
+      
       // If an image file was selected, send as FormData
       if (data.image && data.image.length > 0) {
         const form = new FormData();
@@ -65,27 +67,33 @@ export default function AdminCategoriesPage() {
         form.append("icon", data.icon || "");
         form.append("image", data.image[0]);
 
-        if (formModal.category) {
+        if (isUpdate) {
           await categoryAPI.update(formModal.category._id, form);
-          toast.success("Category updated!");
         } else {
           await categoryAPI.create(form);
-          toast.success("Category created!");
         }
       } else {
-        const payload = { ...data, commission: Number(data.commission), sortOrder: Number(data.sortOrder), parent: data.parent || null };
-        if (formModal.category) {
+        const { image, ...rest } = data;
+        const payload = {
+          ...rest,
+          commission: Number(data.commission),
+          sortOrder: Number(data.sortOrder),
+          parent: data.parent || null,
+        };
+        if (isUpdate) {
           await categoryAPI.update(formModal.category._id, payload);
-          toast.success("Category updated!");
         } else {
           await categoryAPI.create(payload);
-          toast.success("Category created!");
         }
       }
 
+      toast.success(isUpdate ? "Category updated!" : "Category created!");
       setFormModal({ open: false, category: null });
       load();
-    } catch (e) { toast.error(e.response?.data?.message || "Failed"); }
+    } catch (e) { 
+      console.error(e);
+      toast.error(e.response?.data?.message || "Failed to save category"); 
+    }
     finally { setActionLoading(false); }
   };
 

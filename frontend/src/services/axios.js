@@ -7,10 +7,17 @@ const API = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// ── Request: attach access token ──────────────────────────────
+// ── Request: attach access token and normalize content type ──────────────
 API.interceptors.request.use((config) => {
   const token = Cookies.get("accessToken");
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
+
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else {
+    config.headers["Content-Type"] = "application/json";
+  }
+
   return config;
 });
 
@@ -52,7 +59,7 @@ API.interceptors.response.use(
           { withCredentials: true }
         );
         const newToken = data.accessToken;
-        Cookies.set("accessToken", newToken, { expires: 1 / 96 }); // 15 min
+        Cookies.set("accessToken", newToken, { expires: 1 });
         processQueue(null, newToken);
         original.headers["Authorization"] = `Bearer ${newToken}`;
         return API(original);

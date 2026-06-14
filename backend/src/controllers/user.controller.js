@@ -393,7 +393,73 @@ const getAllAdmins = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 15, role, search } = req.query;
+    const filter = {};
 
+    if (role && role !== "all") {
+      filter.role = role;
+    }
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(100, parseInt(limit, 10));
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-password -refreshToken -resetPasswordToken -emailVerifyToken")
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
+        .lean(),
+      User.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      data: users,
+    });
+  } catch (error) {
+    console.error("getAllUsers Error:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+const toggleUserActive = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.role === "admin") {
+      return res.status(403).json({ success: false, message: "Cannot change admin status." });
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.isActive ? "activated" : "deactivated"} successfully.`,
+      data: { _id: user._id, isActive: user.isActive },
+    });
+  } catch (error) {
+    console.error("toggleUserActive Error:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
 
 module.exports = {
   register,
@@ -407,4 +473,6 @@ module.exports = {
   resendVerification,
   createAdmin,
   getAllAdmins,
+  getAllUsers,
+  toggleUserActive,
 };

@@ -56,7 +56,7 @@ export default function VendorProductsPage() {
         </div>
         <div className="flex gap-2">
           <SearchInput value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search..." className="w-full sm:w-56" />
-          <Link href="/vendor/products/add">
+          <Link href="/vendor/add_product">
             <Button variant="vendor">+ Add Product</Button>
           </Link>
         </div>

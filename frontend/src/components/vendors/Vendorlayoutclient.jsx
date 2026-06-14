@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import VendorSidebar from "@/components/layout/vendor/VendorSidebar";
 import { PageLoader } from "@/components/ui";
+import VendorSidebar from "./Vendorsidebar";
 
 export default function VendorLayoutClient({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

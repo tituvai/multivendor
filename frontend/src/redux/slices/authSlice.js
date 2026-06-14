@@ -6,7 +6,8 @@ import { authAPI } from "@/services/api";
 export const loginUser = createAsyncThunk("auth/login", async (data, { rejectWithValue }) => {
   try {
     const res = await authAPI.login(data);
-    Cookies.set("accessToken", res.data.accessToken, { expires: 1 / 96 });
+    // RefreshToken is set in httpOnly cookie automatically by backend
+    Cookies.set("accessToken", res.data.accessToken, { expires: 1 });
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Login failed");

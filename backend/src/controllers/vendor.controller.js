@@ -1,10 +1,10 @@
 const User    = require("../models/userSchema");
 const Product = require("../models/productSchema");
-const {
-  uploadToCloudinary,
-  deleteFromCloudinary,
-  TRANSFORM_PRESETS,
-} = require("../config/cloudinary");
+// const {
+//   uploadToCloudinary,
+//   deleteFromCloudinary,
+//   TRANSFORM_PRESETS,
+// } = require("../config/cloudinary");
 const {
   sendVendorApplicationEmail,
   sendVendorApprovedEmail,
@@ -259,25 +259,39 @@ const getVendorApplications = async (req, res) => {
       search,
     } = req.query;
 
-    const filter = { "vendorInfo.status": { $ne: "none" } };
+    const baseFilter = { role: "vendor" };
+    const isApprovedFallback = {
+      $and: [
+        { "vendorInfo.status": { $exists: false } },
+        { "vendorInfo.isApproved": true },
+      ],
+    };
 
-    if (status !== "all") {
-      filter["vendorInfo.status"] = status;
-    }
+    const statusFilter = status === "all"
+      ? { $or: [ { "vendorInfo.status": { $ne: "none" } }, isApprovedFallback ] }
+      : status === "approved"
+        ? { $or: [ { "vendorInfo.status": "approved" }, isApprovedFallback ] }
+        : { "vendorInfo.status": status };
+
+    const conditions = [baseFilter, statusFilter];
 
     if (search) {
-      filter.$or = [
-        { name:  { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { "vendorInfo.shopName": { $regex: search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { name:  { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { "vendorInfo.shopName": { $regex: search, $options: "i" } },
+        ],
+      });
     }
+
+    const filter = conditions.length > 1 ? { $and: conditions } : conditions[0];
 
     const pageNum  = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, parseInt(limit));
     const skip     = (pageNum - 1) * limitNum;
 
-    const [vendors, total, statusCounts] = await Promise.all([
+    const [vendors, total, statusCounts, missingApprovedCount] = await Promise.all([
       User.find(filter)
         .select("name email avatar phone vendorInfo createdAt lastLogin")
         .populate("vendorInfo.reviewedBy", "name email")
@@ -288,24 +302,35 @@ const getVendorApplications = async (req, res) => {
       User.countDocuments(filter),
       // Status summary
       User.aggregate([
-        { $match: { "vendorInfo.status": { $ne: "none" } } },
+        { $match: { role: "vendor", "vendorInfo.status": { $ne: "none" } } },
         { $group: { _id: "$vendorInfo.status", count: { $sum: 1 } } },
       ]),
+      User.countDocuments({ role: "vendor", "vendorInfo.status": { $exists: false }, "vendorInfo.isApproved": true }),
     ]);
 
     const summary = statusCounts.reduce((acc, s) => {
       acc[s._id] = s.count;
       return acc;
     }, {});
+    summary.approved = (summary.approved || 0) + missingApprovedCount;
+    summary.all = (summary.all || 0) + missingApprovedCount;
+
+    const normalizedVendors = vendors.map((vendor) => {
+      if (!vendor.vendorInfo?.status) {
+        vendor.vendorInfo = vendor.vendorInfo || {};
+        vendor.vendorInfo.status = vendor.vendorInfo.isApproved ? "approved" : "pending";
+      }
+      return vendor;
+    });
 
     res.status(200).json({
       success: true,
-      count: vendors.length,
+      count: normalizedVendors.length,
       total,
       page: pageNum,
       pages: Math.ceil(total / limitNum),
       summary,  // { pending: 5, approved: 12, rejected: 2, ... }
-      data: vendors,
+      data: normalizedVendors,
     });
   } catch (error) {
     console.error("getVendorApplications Error:", error);
@@ -581,13 +606,20 @@ const reactivateVendor = async (req, res) => {
 const getVendorStats = async (req, res) => {
   try {
     const [stats] = await User.aggregate([
-      { $match: { "vendorInfo.status": { $ne: "none" } } },
+      {
+        $match: {
+          $or: [
+            { "vendorInfo.status": { $ne: "none" } },
+            { $and: [ { "vendorInfo.status": { $exists: false } }, { "vendorInfo.isApproved": true } ] },
+          ],
+        },
+      },
       {
         $group: {
           _id:       null,
           total:     { $sum: 1 },
           pending:   { $sum: { $cond: [{ $eq: ["$vendorInfo.status", "pending"]   }, 1, 0] } },
-          approved:  { $sum: { $cond: [{ $eq: ["$vendorInfo.status", "approved"]  }, 1, 0] } },
+          approved:  { $sum: { $cond: [{ $or: [ { $eq: ["$vendorInfo.status", "approved"] }, { $and: [ { $eq: ["$vendorInfo.status", null] }, { $eq: ["$vendorInfo.isApproved", true] } ] } ] }, 1, 0] } },
           rejected:  { $sum: { $cond: [{ $eq: ["$vendorInfo.status", "rejected"]  }, 1, 0] } },
           suspended: { $sum: { $cond: [{ $eq: ["$vendorInfo.status", "suspended"] }, 1, 0] } },
         },

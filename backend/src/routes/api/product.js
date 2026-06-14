@@ -89,7 +89,7 @@ router.get("/:idOrSlug",   getProduct);
 // PUT    /api/products/:id                → update own product
 // DELETE /api/products/:id                → delete own product
 
-router.post(  "/create_product", protect, authorize("vendor"), upload.array("images", 5), productValidation, createProduct);
+router.post(  "/add", protect, authorize("vendor"), upload.array("images", 5), productValidation, createProduct);
 router.get(   "/vendor/my-products",    protect, authorize("vendor"), getMyProducts);
 router.put(   "/:id", protect, authorize("vendor", "admin"), updateProduct);
 router.delete("/:id", protect, authorize("vendor", "admin"), deleteProduct);

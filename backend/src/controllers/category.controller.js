@@ -62,9 +62,10 @@ const createCategory = async (req, res) => {
       metaDescription,
     } = req.body;
 
-
-    const imgPath = req.file.path
-    const imgUrl =await uploadImage(imgPath)
+    let imgUrl = null;
+    if (req.file && req.file.path) {
+      imgUrl = await uploadImage(req.file.path);
+    }
 
     // ─── Duplicate name check (within same parent) ────────────
     const existingSlug = slugify(name, { lower: true, strict: true });
@@ -134,10 +135,10 @@ const createCategory = async (req, res) => {
       metaTitle: metaTitle || name,
       metaDescription: metaDescription || description || "",
       createdBy: req.user._id,
-      image: {
+      image: imgUrl ? {
         url: imgUrl.secure_url,
         publicId: imgUrl.public_id,
-        },
+      } : { url: "", publicId: "" },
     });
 
     res.status(201).json({
@@ -358,10 +359,12 @@ const updateCategory = async (req, res) => {
       parent,
     } = req.body;
 
+    const parsedParent = parent === "" || parent === "null" ? null : parent;
+
     // ─── Handle parent change ─────────────────────────────────
-    if (parent !== undefined && parent?.toString() !== category.parent?.toString()) {
+    if (parsedParent !== undefined && parsedParent?.toString() !== category.parent?.toString()) {
       // Prevent circular reference (can't set descendant as parent)
-      if (parent) {
+      if (parsedParent) {
         const descendantIds = await getAllDescendantIds(category._id);
         const isCircular = descendantIds
           .map((id) => id.toString())
@@ -399,13 +402,13 @@ const updateCategory = async (req, res) => {
     // ─── Apply updates ────────────────────────────────────────
     if (name !== undefined) category.name = name;
     if (description !== undefined) category.description = description;
-    if (commission !== undefined) category.commission = commission;
+    if (commission !== undefined) category.commission = Number(commission);
     if (icon !== undefined) category.icon = icon;
-    if (sortOrder !== undefined) category.sortOrder = sortOrder;
-    if (isFeatured !== undefined) category.isFeatured = isFeatured;
+    if (sortOrder !== undefined) category.sortOrder = Number(sortOrder);
+    if (isFeatured !== undefined) category.isFeatured = isFeatured === "true" || isFeatured === true;
     if (metaTitle !== undefined) category.metaTitle = metaTitle;
     if (metaDescription !== undefined) category.metaDescription = metaDescription;
-
+    if (isActive !== undefined) category.isActive = isActive === "true" || isActive === true;
 
     if (req.file) {
 
