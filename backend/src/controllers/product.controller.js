@@ -1,7 +1,7 @@
 const Product = require("../models/productSchema");
 const Category = require("../models/categoriSchema");
 const uploadImage = require("../middlewares/cloudinary.middleware");
-
+const cloudinary = require("cloudinary").v2;
 
 // ════════════════════════════════════════════════════════════════
 // HELPER: Build filter object from query params
@@ -324,7 +324,7 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    // Cannot edit rejected/archived without re-submitting
+    // Cannot edit archived without re-submitting
     if (["archived"].includes(product.status)) {
       return res.status(400).json({
         success: false,
@@ -332,11 +332,31 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Parse JSON fields
+    let tags = req.body.tags;
+    let shipping = req.body.shipping;
+    
+    if (typeof tags === "string") {
+      try {
+        tags = JSON.parse(tags);
+      } catch {
+        tags = [];
+      }
+    }
+    
+    if (typeof shipping === "string") {
+      try {
+        shipping = JSON.parse(shipping);
+      } catch {
+        shipping = {};
+      }
+    }
+
     const allowedFields = [
       "name", "description", "shortDescription", "price",
-      "discountPrice", "stock", "sku", "tags", "hasVariants",
-      "variants", "shipping", "metaTitle", "metaDescription",
-      "subcategory", "lowStockThreshold",
+      "discountPrice", "stock", "sku", "hasVariants",
+      "variants", "metaTitle", "metaDescription",
+      "lowStockThreshold",
     ];
 
     allowedFields.forEach((field) => {
@@ -345,7 +365,36 @@ const updateProduct = async (req, res) => {
       }
     });
 
-    // Handle image uploads
+    // Update tags and shipping
+    if (tags && Array.isArray(tags)) {
+      product.tags = tags;
+    }
+    if (shipping) {
+      product.shipping = shipping;
+    }
+
+    // Handle image deletion
+    if (req.body.deleteImages) {
+      let deleteIds = req.body.deleteImages;
+      if (typeof deleteIds === "string") {
+        try {
+          deleteIds = JSON.parse(deleteIds);
+        } catch {
+          deleteIds = [];
+        }
+      }
+      
+      if (Array.isArray(deleteIds) && deleteIds.length > 0) {
+        await Promise.all(
+          deleteIds.map((publicId) =>
+            cloudinary.uploader.destroy(publicId).catch((err) => console.log("Delete image error:", err))
+          )
+        );
+        product.images = product.images.filter((img) => !deleteIds.includes(img.publicId));
+      }
+    }
+
+    // Handle new image uploads
     if (req.files && req.files.length > 0) {
       const uploadedImages = await Promise.all(
         req.files.map(async (file) => {
@@ -356,28 +405,28 @@ const updateProduct = async (req, res) => {
           };
         })
       );
-      product.images = uploadedImages;
-    } else if (req.body.images && Array.isArray(req.body.images)) {
-      // If no new files but images array is provided in body, use it
-      product.images = req.body.images;
+      // Append new images to existing ones
+      product.images = [...(product.images || []), ...uploadedImages];
     }
 
     // Category change — update commission rate
-    if (req.body.category && req.body.category !== product.category.toString()) {
+    if (req.body.category && req.body.category !== product.category?.toString()) {
       const newCategory = await Category.findById(req.body.category);
       if (!newCategory || !newCategory.isActive) {
         return res.status(404).json({ success: false, message: "Category not found." });
       }
       // Update old & new category product counts
-      await Category.findByIdAndUpdate(product.category, { $inc: { productCount: -1 } });
-      await Category.findByIdAndUpdate(req.body.category,  { $inc: { productCount:  1 } });
-      product.category       = req.body.category;
+      if (product.category) {
+        await Category.findByIdAndUpdate(product.category, { $inc: { productCount: -1 } });
+      }
+      await Category.findByIdAndUpdate(req.body.category, { $inc: { productCount: 1 } });
+      product.category = req.body.category;
       product.commissionRate = newCategory.commission;
     }
 
     // Re-editing a rejected product resets to pending
     if (product.status === "rejected") {
-      product.status          = "pending";
+      product.status = "pending";
       product.rejectionReason = "";
     }
 

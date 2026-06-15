@@ -54,12 +54,42 @@ export default function ProductForm({ defaultValues, onSubmit, loading, mode = "
   const submit = (data) => {
     const fd = new FormData();
 
-    // Text fields
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        fd.append(key, value);
-      }
-    });
+    // Parse and add text fields with proper type conversion
+    fd.append("name", data.name);
+    fd.append("description", data.description);
+    fd.append("shortDescription", data.shortDescription || "");
+    fd.append("price", Number(data.price));
+    fd.append("discountPrice", data.discountPrice ? Number(data.discountPrice) : 0);
+    fd.append("stock", Number(data.stock));
+    fd.append("sku", data.sku || "");
+    fd.append("category", data.category);
+    fd.append("metaTitle", data.metaTitle || "");
+    fd.append("metaDescription", data.metaDescription || "");
+    fd.append("lowStockThreshold", data.lowStockThreshold ? Number(data.lowStockThreshold) : 0);
+
+    // Tags: convert comma-separated string to array
+    if (data.tags) {
+      const tagsArray = data.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag !== "");
+      fd.append("tags", JSON.stringify(tagsArray));
+    } else {
+      fd.append("tags", JSON.stringify([]));
+    }
+
+    // Shipping: convert nested fields to object
+    const shipping = {
+      isFreeShipping: data["shipping.isFreeShipping"] === true,
+      weight: data["shipping.weight"] ? Number(data["shipping.weight"]) : 0,
+      shippingCost: data["shipping.shippingCost"] ? Number(data["shipping.shippingCost"]) : 0,
+      dimensions: {
+        length: data["shipping.dimensions.length"] ? Number(data["shipping.dimensions.length"]) : 0,
+        width: data["shipping.dimensions.width"] ? Number(data["shipping.dimensions.width"]) : 0,
+        height: data["shipping.dimensions.height"] ? Number(data["shipping.dimensions.height"]) : 0,
+      },
+    };
+    fd.append("shipping", JSON.stringify(shipping));
 
     // New image files
     newFiles.forEach((file) => fd.append("images", file));
