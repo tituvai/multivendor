@@ -98,8 +98,8 @@ router.get("/:vendorId/shop", getPublicVendorShop);
 router.post(
   "/apply",
   protect,
-  // handleMulterError(uploadDocs),
-  applyValidation,
+  uploadDocs,
+  handleMulterError,
   applyAsVendor
 );
 

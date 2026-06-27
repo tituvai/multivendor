@@ -16,9 +16,10 @@ export default function VendorLayoutClient({ children }) {
     if (initialized && !isVendor) {
       router.replace(user ? "/" : "/auth/login");
     }
-  }, [initialized, isVendor]);
+  }, [initialized, isVendor, user, router]);
 
-  if (!initialized || !isVendor) return <PageLoader />;
+  if (!initialized) return <PageLoader />;
+  if (!isVendor) return <PageLoader />;
 
   // Vendor not approved yet
   if (!user?.vendorInfo?.isApproved) {

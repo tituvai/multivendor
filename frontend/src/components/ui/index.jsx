@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { clsx } from "clsx";
 
 // ════════════════════════════════════════════════════
@@ -363,6 +364,102 @@ export function SearchInput({ value, onChange, placeholder = "Search...", classN
         placeholder={placeholder}
         className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
       />
+    </div>
+  );
+}
+
+
+
+
+export function SectionHeader({ title, subtitle, viewAllHref, accent = false }) {
+  return (
+    <div className="flex items-end justify-between mb-5">
+      <div>
+        <div className={clsx("flex items-center gap-2 mb-1", accent && "")}>
+          {accent && <span className="w-1 h-6 bg-orange-500 rounded-full block" />}
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h2>
+        </div>
+        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+      </div>
+      {viewAllHref && (
+        <Link href={viewAllHref} className="text-sm font-medium text-orange-500 hover:text-orange-600 whitespace-nowrap flex items-center gap-0.5 transition">
+          View all <span>→</span>
+        </Link>
+      )}
+    </div>
+  );
+}
+
+export function ProductGrid({ children, cols = 5 }) {
+  const colMap = { 2: "grid-cols-2", 3: "grid-cols-2 sm:grid-cols-3", 4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4", 5: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4" };
+  return <div className={clsx("grid gap-3 sm:gap-4", colMap[cols] || colMap[5])}>{children}</div>;
+}
+
+// export function Pagination({ page, pages, onChange }) {
+//   if (pages <= 1) return null;
+//   const getPages = () => {
+//     const arr = []; const d = 2;
+//     for (let i = Math.max(2, page - d); i <= Math.min(pages - 1, page + d); i++) arr.push(i);
+//     if (page - d > 2)      arr.unshift("...");
+//     if (page + d < pages - 1) arr.push("...");
+//     arr.unshift(1); if (pages > 1) arr.push(pages);
+//     return [...new Set(arr)];
+//   };
+//   return (
+//     <div className="flex items-center justify-center gap-1.5 py-6">
+//       <button onClick={() => onChange(page - 1)} disabled={page === 1}
+//         className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition">← Prev</button>
+//       {getPages().map((p, i) => p === "..." ? (
+//         <span key={i} className="px-1 text-gray-400">...</span>
+//       ) : (
+//         <button key={p} onClick={() => onChange(p)}
+//           className={clsx("w-9 h-9 rounded-lg text-sm font-medium transition", p === page ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50 border border-gray-200")}>
+//           {p}
+//         </button>
+//       ))}
+//       <button onClick={() => onChange(page + 1)} disabled={page === pages}
+//         className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition">Next →</button>
+//     </div>
+//   );
+// }
+
+// export function EmptyState({ icon = "📭", title, description, action }) {
+//   return (
+//     <div className="text-center py-16">
+//       <div className="text-5xl mb-4">{icon}</div>
+//       <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+//       {description && <p className="text-sm text-gray-500 mb-5 max-w-xs mx-auto">{description}</p>}
+//       {action}
+//     </div>
+//   );
+// }
+
+// export function Spinner({ size = "md" }) {
+//   const s = { sm: "w-4 h-4", md: "w-6 h-6", lg: "w-10 h-10" };
+//   return <div className={clsx("animate-spin rounded-full border-2 border-orange-500 border-t-transparent", s[size])} />;
+// }
+
+// export function Badge({ children, color = "gray" }) {
+//   const c = { gray: "bg-gray-100 text-gray-600", orange: "bg-orange-100 text-orange-700", green: "bg-green-100 text-green-700", red: "bg-red-100 text-red-700", blue: "bg-blue-100 text-blue-700", purple: "bg-purple-100 text-purple-700", teal: "bg-teal-100 text-teal-700", amber: "bg-amber-100 text-amber-700" };
+//   return <span className={clsx("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", c[color] || c.gray)}>{children}</span>;
+// }
+
+// export function OrderStatusBadge({ status }) {
+//   const m = { pending: ["Pending","amber"], processing: ["Processing","blue"], partially_shipped: ["Part. Shipped","purple"], shipped: ["Shipped","teal"], delivered: ["Delivered","green"], cancelled: ["Cancelled","red"], refunded: ["Refunded","gray"] };
+//   const [label, color] = m[status] || [status, "gray"];
+//   return <Badge color={color}>{label}</Badge>;
+// }
+
+export function StarRating({ rating = 0, count, size = "sm" }) {
+  const s = size === "lg" ? "w-4 h-4" : "w-3 h-3";
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1,2,3,4,5].map((n) => (
+        <svg key={n} viewBox="0 0 20 20" className={clsx(s, n <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200")}>
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+      {count !== undefined && <span className="text-xs text-gray-400 ml-1">({count})</span>}
     </div>
   );
 }

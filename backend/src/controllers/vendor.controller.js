@@ -1,10 +1,9 @@
 const User    = require("../models/userSchema");
 const Product = require("../models/productSchema");
-// const {
-//   uploadToCloudinary,
-//   deleteFromCloudinary,
-//   TRANSFORM_PRESETS,
-// } = require("../config/cloudinary");
+const {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} = require("../config/cloudinary");
 const {
   sendVendorApplicationEmail,
   sendVendorApprovedEmail,
@@ -19,6 +18,11 @@ const {
 // ═══════════════════════════════════════════════════════════════
 const applyAsVendor = async (req, res) => {
   try {
+    console.log("=== Vendor Registration Request ===");
+    console.log("Request body:", req.body);
+    console.log("Request files:", req.files);
+    console.log("User:", req.user);
+
     const {
       shopName,
       shopDescription,
@@ -28,7 +32,15 @@ const applyAsVendor = async (req, res) => {
       nidNumber,
     } = req.body;
 
+    if (!shopName) {
+      return res.status(400).json({
+        success: false,
+        message: "Shop name is required",
+      });
+    }
+
     const user = await User.findById(req.user._id);
+    console.log("Found user:", user);
 
     // ── Already a vendor / pending ─────────────────────────────
     if (user.role === "vendor") {
@@ -252,6 +264,10 @@ const getPublicVendorShop = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 const getVendorApplications = async (req, res) => {
   try {
+    console.log("=== Admin Get Vendor Applications ===");
+    console.log("Query params:", req.query);
+    console.log("User:", req.user);
+
     const {
       page   = 1,
       limit  = 20,
@@ -259,7 +275,12 @@ const getVendorApplications = async (req, res) => {
       search,
     } = req.query;
 
-    const baseFilter = { role: "vendor" };
+    const baseFilter = {
+      $or: [
+        { role: "vendor" },
+        { "vendorInfo.status": { $in: ["pending", "approved", "rejected", "suspended"] } }
+      ]
+    };
     const isApprovedFallback = {
       $and: [
         { "vendorInfo.status": { $exists: false } },
@@ -285,6 +306,8 @@ const getVendorApplications = async (req, res) => {
       });
     }
 
+    console.log("Filter conditions:", conditions);
+
     const filter = conditions.length > 1 ? { $and: conditions } : conditions[0];
 
     const pageNum  = Math.max(1, parseInt(page));
@@ -302,7 +325,15 @@ const getVendorApplications = async (req, res) => {
       User.countDocuments(filter),
       // Status summary
       User.aggregate([
-        { $match: { role: "vendor", "vendorInfo.status": { $ne: "none" } } },
+        {
+          $match: {
+            $or: [
+              { role: "vendor" },
+              { "vendorInfo.status": { $in: ["pending", "approved", "rejected", "suspended"] } }
+            ],
+            "vendorInfo.status": { $ne: "none" }
+          }
+        },
         { $group: { _id: "$vendorInfo.status", count: { $sum: 1 } } },
       ]),
       User.countDocuments({ role: "vendor", "vendorInfo.status": { $exists: false }, "vendorInfo.isApproved": true }),

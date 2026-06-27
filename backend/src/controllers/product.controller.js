@@ -132,8 +132,9 @@ if (req.files && req.files.length > 0) {
     }
 
     // ── SKU duplicate check ────────────────────────────────────
-    if (sku) {
-      const skuExists = await Product.findOne({ sku });
+    const cleanedSku = sku && typeof sku === "string" && sku.trim() !== "" ? sku.trim() : undefined;
+    if (cleanedSku) {
+      const skuExists = await Product.findOne({ sku: cleanedSku });
       if (skuExists) {
         return res.status(409).json({
           success: false,
@@ -150,7 +151,7 @@ if (req.files && req.files.length > 0) {
       price,
       discountPrice: discountPrice || 0,
       stock,
-      sku,
+      sku: cleanedSku,
       category,
       subcategory: subcategory || null,
       tags: tags || [],
@@ -198,6 +199,10 @@ const getProducts = async (req, res) => {
 
     // Public only sees active products
     const filter = buildProductFilter(req.query, { status: "active" });
+
+    console.log("=== Get Products ===");
+    console.log("Query params:", req.query);
+    console.log("Filter:", filter);
 
     // Sorting
     const sortOptions = {

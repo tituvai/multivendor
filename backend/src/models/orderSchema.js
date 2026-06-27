@@ -155,7 +155,7 @@ const orderSchema = new mongoose.Schema(
 // ════════════════════════════════════════════════════════════
 // PRE-SAVE: Auto-generate order number
 // ════════════════════════════════════════════════════════════
-orderSchema.pre("save", async function (next) {
+orderSchema.pre("save", async function () {
   if (!this.orderNumber) {
     // Format: MV-20240101-XXXX (MV = MultiVendor)
     const date   = new Date();
@@ -174,7 +174,6 @@ orderSchema.pre("save", async function (next) {
 
     this.orderNumber = `${prefix}-${String(seq).padStart(4, "0")}`;
   }
-  next();
 });
 
 // ════════════════════════════════════════════════════════════
@@ -188,7 +187,6 @@ orderSchema.virtual("vendorCount").get(function () {
 // ════════════════════════════════════════════════════════════
 // INDEXES
 // ════════════════════════════════════════════════════════════
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ customer: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ "items.vendor": 1, status: 1 });

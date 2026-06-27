@@ -137,7 +137,9 @@ export default function AdminProductsPage() {
                   <td className="px-4 py-3"><ProductStatusBadge status={p.status} /></td>
                   <td className="px-4 py-3">
                     <button onClick={() => handleToggleFeatured(p._id)}
-                      className={`text-lg transition ${p.isFeatured ? "opacity-100" : "opacity-30 hover:opacity-60"}`}>⭐</button>
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${p.isFeatured ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-600"}`}>
+                      {p.isFeatured ? "⭐ Featured" : "Make Featured"}
+                    </button>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">

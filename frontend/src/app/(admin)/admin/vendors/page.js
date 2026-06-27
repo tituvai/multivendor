@@ -34,11 +34,17 @@ export default function AdminVendorsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      console.log("=== Loading vendors ===");
+      console.log("Params:", { status: tab, search, page, limit: 10 });
       const res = await vendorAPI.adminGetAll({ status: tab, search, page, limit: 10 });
+      console.log("Response:", res.data);
       setVendors(res.data.data);
       setSummary(res.data.summary || {});
       setPages(res.data.pages);
-    } catch { toast.error("Failed to load vendors"); }
+    } catch (err) {
+      console.error("Failed to load vendors:", err);
+      toast.error("Failed to load vendors");
+    }
     finally { setLoading(false); }
   }, [tab, search, page]);
 

@@ -64,6 +64,13 @@ const placeOrder = async (req, res) => {
         });
       }
 
+      if (!product.vendor) {
+        return res.status(400).json({
+          success: false,
+          message: `Vendor for product "${product.name}" is no longer active or available.`,
+        });
+      }
+
       if (product.stock < item.quantity) {
         return res.status(400).json({
           success: false,
@@ -73,10 +80,11 @@ const placeOrder = async (req, res) => {
 
       // Use effective price (discountPrice if available)
       const effectivePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+      const rate = product.commissionRate ?? 10;
       const { commissionAmount, vendorEarning } = calculateItemEarnings(
         effectivePrice,
         item.quantity,
-        product.commissionRate
+        rate
       );
 
       // Variant info
@@ -99,7 +107,7 @@ const placeOrder = async (req, res) => {
         price:            effectivePrice,
         quantity:         item.quantity,
         variant:          variantInfo,
-        commissionRate:   product.commissionRate,
+        commissionRate:   rate,
         commissionAmount,
         vendorEarning,
         status:           "pending",
@@ -199,7 +207,11 @@ const placeOrder = async (req, res) => {
     });
   } catch (error) {
     console.error("placeOrder Error:", error);
-    res.status(500).json({ success: false, message: "Server error." });
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error.",
+      errors: error.errors,
+    });
   }
 };
 

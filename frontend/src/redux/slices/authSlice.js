@@ -1,13 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
-import { authAPI } from "@/services/api";
+import { authAPI } from "@/services/authApi";
 
-// ── Async Thunks ──────────────────────────────────────────────
 export const loginUser = createAsyncThunk("auth/login", async (data, { rejectWithValue }) => {
   try {
     const res = await authAPI.login(data);
-    // RefreshToken is set in httpOnly cookie automatically by backend
-    Cookies.set("accessToken", res.data.accessToken, { expires: 1 });
+    Cookies.set("accessToken", res.data.accessToken, { expires: 1, sameSite: "lax" });
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Login failed");
@@ -38,57 +36,93 @@ export const fetchMe = createAsyncThunk("auth/fetchMe", async (_, { rejectWithVa
     const res = await authAPI.getMe();
     return res.data.user;
   } catch (err) {
+    Cookies.remove("accessToken");
     return rejectWithValue(err.response?.data?.message);
   }
 });
 
-// ── Slice ─────────────────────────────────────────────────────
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user:        null,
+    user: null,
     accessToken: Cookies.get("accessToken") || null,
-    isLoading:   false,
-    error:       null,
+    isLoading: false,
+    error: null,
     initialized: false,
   },
   reducers: {
-    clearError:   (state) => { state.error = null; },
-    setToken:     (state, action) => { state.accessToken = action.payload; },
-    clearAuth:    (state) => { state.user = null; state.accessToken = null; Cookies.remove("accessToken"); },
+    clearError: (state) => {
+      state.error = null;
+    },
+    setToken: (state, action) => {
+      state.accessToken = action.payload;
+    },
+    clearAuth: (state) => {
+      state.user = null;
+      state.accessToken = null;
+      Cookies.remove("accessToken");
+    },
+    setInitialized: (state) => {
+      state.initialized = true;
+    },
   },
   extraReducers: (builder) => {
-    // login
     builder
-      .addCase(loginUser.pending,   (s) => { s.isLoading = true;  s.error = null; })
-      .addCase(loginUser.fulfilled, (s, a) => {
-        s.isLoading   = false;
-        s.user        = a.payload.user;
-        s.accessToken = a.payload.accessToken;
+      .addCase(loginUser.pending, (s) => {
+        s.isLoading = true;
+        s.error = null;
       })
-      .addCase(loginUser.rejected,  (s, a) => { s.isLoading = false; s.error = a.payload; })
+      .addCase(loginUser.fulfilled, (s, a) => {
+        s.isLoading = false;
+        s.user = a.payload.user;
+        s.accessToken = a.payload.accessToken;
+        s.initialized = true;
+      })
+      .addCase(loginUser.rejected, (s, a) => {
+        s.isLoading = false;
+        s.error = a.payload;
+      })
 
-    // register
-      .addCase(registerUser.pending,   (s) => { s.isLoading = true;  s.error = null; })
-      .addCase(registerUser.fulfilled, (s) => { s.isLoading = false; })
-      .addCase(registerUser.rejected,  (s, a) => { s.isLoading = false; s.error = a.payload; })
+      .addCase(registerUser.pending, (s) => {
+        s.isLoading = true;
+        s.error = null;
+      })
+      .addCase(registerUser.fulfilled, (s) => {
+        s.isLoading = false;
+      })
+      .addCase(registerUser.rejected, (s, a) => {
+        s.isLoading = false;
+        s.error = a.payload;
+      })
 
-    // logout
-      .addCase(logoutUser.fulfilled, (s) => { s.user = null; s.accessToken = null; })
+      .addCase(logoutUser.fulfilled, (s) => {
+        s.user = null;
+        s.accessToken = null;
+        s.initialized = true;
+      })
 
-    // fetchMe
-      .addCase(fetchMe.pending,   (s) => { s.isLoading = true; })
-      .addCase(fetchMe.fulfilled, (s, a) => { s.isLoading = false; s.user = a.payload; s.initialized = true; })
-      .addCase(fetchMe.rejected,  (s) => { s.isLoading = false; s.initialized = true; });
+      .addCase(fetchMe.pending, (s) => {
+        s.isLoading = true;
+      })
+      .addCase(fetchMe.fulfilled, (s, a) => {
+        s.isLoading = false;
+        s.user = a.payload;
+        s.initialized = true;
+      })
+      .addCase(fetchMe.rejected, (s) => {
+        s.isLoading = false;
+        s.user = null;
+        s.accessToken = null;
+        s.initialized = true;
+      });
   },
 });
 
-export const { clearError, setToken, clearAuth } = authSlice.actions;
+export const { clearError, setToken, clearAuth, setInitialized } = authSlice.actions;
 export default authSlice.reducer;
 
-// ── Selectors ─────────────────────────────────────────────────
-export const selectAuth        = (s) => s.auth;
-export const selectUser        = (s) => s.auth.user;
-export const selectIsLoggedIn  = (s) => !!s.auth.user;
-export const selectUserRole    = (s) => s.auth.user?.role;
+export const selectAuth = (s) => s.auth;
+export const selectUser = (s) => s.auth.user;
+export const selectIsLoggedIn = (s) => !!s.auth.user;
+export const selectUserRole = (s) => s.auth.user?.role;
 export const selectAuthLoading = (s) => s.auth.isLoading;

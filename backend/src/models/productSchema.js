@@ -265,6 +265,15 @@ productSchema.virtual("isOutOfStock").get(function () {
 // PRE-SAVE: Auto slug + discountPercent calculation
 // ════════════════════════════════════════════════════════
 productSchema.pre("save", async function () {
+  // Clean up SKU if empty or whitespace-only
+  if (this.sku !== undefined) {
+    if (typeof this.sku === "string" && this.sku.trim() === "") {
+      this.sku = undefined;
+    } else if (typeof this.sku === "string") {
+      this.sku = this.sku.trim();
+    }
+  }
+
   // Auto slug
   if (this.isModified("name")) {
     let baseSlug = slugify(this.name, { lower: true, strict: true });
@@ -318,7 +327,6 @@ productSchema.methods.recalculateRatings = function () {
 // ════════════════════════════════════════════════════════
 // INDEXES
 // ════════════════════════════════════════════════════════
-productSchema.index({ slug: 1 });
 productSchema.index({ vendor: 1, status: 1 });
 productSchema.index({ category: 1, status: 1 });
 productSchema.index({ status: 1, isFeatured: 1 });

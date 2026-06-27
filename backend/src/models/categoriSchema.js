@@ -123,7 +123,6 @@ categorySchema.pre("save", function () {
 });
 
 // ─── Index for fast queries ───────────────────────────────────
-categorySchema.index({ slug: 1 });
 categorySchema.index({ parent: 1 });
 categorySchema.index({ isActive: 1, sortOrder: 1 });
 categorySchema.index({ "ancestors._id": 1 });

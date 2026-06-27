@@ -1,8 +1,9 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import { API_BASE_URL } from "./apiConfig";
 
 const API = axios.create({
-  baseURL: ["https://multivendor-ybbe.onrender.com/api/v1", "http://localhost:5000/api/v1"][process.env.NODE_ENV === "production" ? 0 : 1],
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
@@ -23,7 +24,7 @@ API.interceptors.request.use((config) => {
 
 // ── Response: auto refresh on 401 ────────────────────────────
 let isRefreshing = false;
-let failedQueue  = [];
+let failedQueue = [];
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
@@ -50,11 +51,11 @@ API.interceptors.response.use(
       }
 
       original._retry = true;
-      isRefreshing    = true;
+      isRefreshing = true;
 
       try {
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`,
+          `${API_BASE_URL}/auth/refresh-token`,
           {},
           { withCredentials: true }
         );

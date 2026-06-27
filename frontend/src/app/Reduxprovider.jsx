@@ -7,6 +7,7 @@ export default function ReduxProvider({ children }) {
   return (
     <Provider store={store}>
       <AuthInitializer>{children}</AuthInitializer>
+      
     </Provider>
   );
 }

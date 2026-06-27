@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userSchema");
 const { sendTokenResponse, generateAccessToken } = require("../utils/tokenUtils");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../utils/emailUtils");
+const { sendVendorApplicationEmail } = require("../utils/vendor.email.utiles");
 
 
 const register = async (req, res) => {
@@ -45,6 +46,91 @@ const register = async (req, res) => {
     });
   } catch (error) {
     console.error("Register Error:", error);
+    res.status(500).json({ success: false, message: "Server error. Please try again." });
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════
+// @desc    Register as a vendor (account + application in one step)
+// @route   POST /api/auth/register-vendor
+// @access  Public
+// ═══════════════════════════════════════════════════════
+const registerVendor = async (req, res) => {
+  try {
+    const {
+      name, email, password,
+      shopName, shopDescription, shopAddress, shopPhone, shopEmail, nidNumber,
+    } = req.body;
+
+    // ── Required field check ───────────────────────────────────
+    if (!name || !email || !password || !shopName) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email, password, and shop name are required.",
+      });
+    }
+
+    // ── Duplicate email check ──────────────────────────────────
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists.",
+      });
+    }
+
+    // ── Duplicate shop name check ──────────────────────────────
+    const shopNameTaken = await User.findOne({
+      "vendorInfo.shopName": { $regex: `^${shopName}$`, $options: "i" },
+    });
+    if (shopNameTaken) {
+      return res.status(409).json({
+        success: false,
+        message: "This shop name is already taken. Please choose another.",
+      });
+    }
+
+    // ── Create user (vendor KYC replaces email verification) ───
+    const user = await User.create({
+      name,
+      email,
+      password,
+      isEmailVerified: true,
+      isActive: true,
+    });
+
+    // ── Save vendor application info ───────────────────────────
+    user.vendorInfo = {
+      shopName:        shopName.trim(),
+      shopDescription: shopDescription?.trim() || "",
+      shopAddress:     shopAddress?.trim()  || "",
+      shopPhone:       shopPhone?.trim()    || "",
+      shopEmail:       shopEmail?.trim()    || email,
+      nidNumber:       nidNumber?.trim()    || "",
+      status:          "pending",
+      isApproved:      false,
+      appliedAt:       new Date(),
+    };
+    user.markModified("vendorInfo");
+    await user.save();
+
+    // ── Send application confirmation email ────────────────────
+    try {
+      await sendVendorApplicationEmail(user);
+    } catch (emailErr) {
+      console.error("Vendor application email failed:", emailErr.message);
+    }
+
+    // ── Return token (auto login) ──────────────────────────────
+    sendTokenResponse(
+      user,
+      201,
+      res,
+      "Vendor application submitted! We will review it within 2–3 business days."
+    );
+  } catch (error) {
+    console.error("registerVendor Error:", error);
     res.status(500).json({ success: false, message: "Server error. Please try again." });
   }
 };
@@ -463,6 +549,7 @@ const toggleUserActive = async (req, res) => {
 
 module.exports = {
   register,
+  registerVendor,
   verifyEmail,
   login,
   refreshToken,

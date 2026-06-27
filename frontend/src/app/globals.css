@@ -1,15 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+/* Theme Variables */
 :root {
-  --background: #ffffff;
+  --background: #f5f5f5;
   --foreground: #171717;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +19,75 @@
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Base Styles */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--background);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: "Inter", sans-serif;
+    min-height: 100vh;
+  }
+}
+@layer components {
+  /* Container */
+  .container-base {
+    @apply max-w-7xl mx-auto px-3 sm:px-4 lg:px-6;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-orange-500 text-white hover:bg-orange-600 transition font-semibold rounded-lg px-5 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply border border-orange-500 text-orange-500 hover:bg-orange-50 transition font-semibold rounded-lg px-5 py-2.5 text-sm;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-3.5 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    @apply bg-gray-200 animate-pulse rounded;
+  }
+
+  /* Badges */
+  .badge-new {
+    @apply bg-green-500 text-white text-xs font-semibold p-1.5 rounded;
+  }
+
+  .badge-sale {
+    @apply bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded;
+  }
+
+  .badge-hot {
+    @apply bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded;
+  }
+
+  /* Stars */
+  .star-filled {
+    @apply text-yellow-400;
+  }
+
+  .star-empty {
+    @apply text-gray-200;
+  }
 }

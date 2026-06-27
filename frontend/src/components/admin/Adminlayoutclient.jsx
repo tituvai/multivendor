@@ -20,9 +20,10 @@ export default function AdminLayoutClient({ children }) {
     if (initialized && !isAdmin) {
       router.replace(user ? "/" : "/auth/login");
     }
-  }, [initialized, isAdmin]);
+  }, [initialized, isAdmin, user, router]);
 
-  if (!initialized || !isAdmin) return <PageLoader />;
+  if (!initialized) return <PageLoader />;
+  if (!isAdmin) return <PageLoader />;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

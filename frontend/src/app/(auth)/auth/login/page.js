@@ -1,19 +1,28 @@
 "use client";
+import { Suspense } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
-import { Button, Input } from "@/components/ui";
+import toast from "react-hot-toast";
+import { Button, Input, PageLoader } from "@/components/ui";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const { login, isLoading, error } = useAuth();
   const { register, handleSubmit, formState: { errors } } = useForm();
 
-  const onSubmit = (data) => login(data);
+  const onSubmit = async (data) => {
+    const result = await login(data, redirectTo || undefined);
+    if (result.success) {
+      toast.success("Welcome back!");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <span className="text-4xl">🛍️</span>
           <h1 className="text-2xl font-bold text-gray-900 mt-2">MultiVendor</h1>
@@ -58,11 +67,21 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have an account?{" "}
-            <Link href="/auth/register" className="text-blue-600 font-medium hover:underline">Create one</Link>
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/register" className="text-blue-600 font-medium hover:underline">
+              Create one
+            </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <LoginForm />
+    </Suspense>
   );
 }
