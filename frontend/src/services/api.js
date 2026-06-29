@@ -35,6 +35,16 @@ export const categoryAPI = {
   delete: (id, params) => API.delete(`/categories/${id}`, { params }),
 };
 
+export const flashSaleAPI = {
+  getActive: () => API.get("/flash-sales/active"),
+  adminGetAll: (params) => API.get("/flash-sales/admin/all", { params }),
+  adminGetById: (id) => API.get(`/flash-sales/${id}`),
+  create: (data) => API.post("/flash-sales", data),
+  update: (id, data) => API.put(`/flash-sales/${id}`, data),
+  delete: (id) => API.delete(`/flash-sales/${id}`),
+  updateSoldCount: (flashSaleId, itemId, quantity) => API.patch(`/flash-sales/${flashSaleId}/items/${itemId}`, { quantity }),
+};
+
 export const vendorAPI = {
   apply: (data) => API.post("/vendors/apply", data),
   getProfile: () => API.get("/vendors/profile"),

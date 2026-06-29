@@ -7,6 +7,7 @@ import { StarRating } from "@/components/ui";
 import { Heart, ShoppingCart, Eye } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function ProductCard({ product }) {
   const dispatch = useDispatch();
@@ -41,17 +42,14 @@ export default function ProductCard({ product }) {
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
-      className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between h-[360px] relative transition-colors"
+      className="group bg-white dark:bg-slate-900 rounded-sm border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between h-[360px] relative transition-colors"
     >
       {/* Product Image Section */}
-      <div className="relative h-44 w-full bg-slate-50 dark:bg-slate-950 overflow-hidden flex items-center justify-center">
+      <div className="relative h-44 w-full p-5 bg-slate-50 dark:bg-slate-950 overflow-hidden flex items-center justify-center">
         {mainImageUrl ? (
-          <img
-            src={mainImageUrl}
-            alt={product.name}
-            className="object-cover h-full w-full group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
+          <Image src={mainImageUrl} alt={product.name} fill className="object-cover  group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"/>
+          
         ) : (
           <span className="text-4xl text-slate-300">📦</span>
         )}

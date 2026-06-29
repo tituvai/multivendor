@@ -391,7 +391,7 @@ export function SectionHeader({ title, subtitle, viewAllHref, accent = false }) 
 }
 
 export function ProductGrid({ children, cols = 5 }) {
-  const colMap = { 2: "grid-cols-2", 3: "grid-cols-2 sm:grid-cols-3", 4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4", 5: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4" };
+  const colMap = { 2: "grid-cols-2", 3: "grid-cols-2 sm:grid-cols-3", 4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4", 5: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" };
   return <div className={clsx("grid gap-3 sm:gap-4", colMap[cols] || colMap[5])}>{children}</div>;
 }
 

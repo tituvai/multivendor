@@ -4,13 +4,20 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
+const cron = require("node-cron");
 require("dotenv").config();
 
 const connectDB = require("./src/config/connectDB");
 const authRoutes = require("./src/routes");
+const { autoExpireFlashSales } = require("./src/controllers/flashSale.controller");
 
 // ─── Connect to Database ──────────────────────────────────────
 connectDB();
+
+// ─── Schedule Auto-Expire Flash Sales (Every minute) ─────────
+cron.schedule("* * * * *", () => {
+  autoExpireFlashSales();
+});
 
 const app = express();
 

@@ -5,49 +5,62 @@ import { useSelector } from "react-redux";
 import { selectRecentlyViewed } from "@/redux/slices/cartSlice";
 import { useGetFeaturedCategoriesQuery } from "@/redux/slices/categoriesApi";
 import { useGetProductsQuery } from "@/redux/slices/productsApi";
+import { flashSaleAPI } from "@/services/api";
 import ProductCard from "@/components/customer/ProductCard";
 import { Spinner, SectionHeader, ProductGrid } from "@/components/ui";
 import { Flame, ArrowRight, ShieldCheck, Truck, RefreshCw, Award } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function Home() {
   const recentlyViewed = useSelector(selectRecentlyViewed);
 
   const [mounted, setMounted] = useState(false);
 
-useEffect(() => {
-  setMounted(true);
-}, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Queries
   const { data: featuredCatsRes, isLoading: catsLoading } = useGetFeaturedCategoriesQuery();
   const { data: featuredProductsRes, isLoading: productsLoading } = useGetProductsQuery({
     limit: 10,
-    sortBy: "popular",
-  });
-  const { data: flashSaleProductsRes, isLoading: flashLoading } = useGetProductsQuery({
-    limit: 5,
-    isFeatured: "true",
+    sortBy: "createdAt",
+    order: "desc",
   });
 
   const featuredCats = featuredCatsRes?.data || [];
   const featuredProducts = featuredProductsRes?.data || [];
-  const flashProducts = flashSaleProductsRes?.data || [];
 
-  console.log("=== Flash Sales Debug ===");
-  console.log("Flash Sale API Response:", flashSaleProductsRes);
-  console.log("Flash Products:", flashProducts);
-  console.log("Flash Loading:", flashLoading);
-
-  // Countdown Timer state (Flash sale ends at midnight)
+  // Flash Sale State
+  const [flashSale, setFlashSale] = useState(null);
+  const [flashLoading, setFlashLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [showAllFlash, setShowAllFlash] = useState(false);
 
+  // Fetch active flash sale
   useEffect(() => {
+    const fetchFlashSale = async () => {
+      try {
+        const res = await flashSaleAPI.getActive();
+        setFlashSale(res.data.data);
+      } catch (error) {
+        console.log("No active flash sale");
+      } finally {
+        setFlashLoading(false);
+      }
+    };
+    fetchFlashSale();
+  }, []);
+
+  // Countdown Timer
+  useEffect(() => {
+    if (!flashSale || flashSale.status !== "active") return;
+
     const calculateTimeLeft = () => {
       const now = new Date();
-      const target = new Date();
-      target.setHours(24, 0, 0, 0); // Next midnight
-      const difference = target - now;
+      const endTime = new Date(flashSale.endTime);
+      const difference = endTime - now;
 
       if (difference > 0) {
         setTimeLeft({
@@ -55,13 +68,27 @@ useEffect(() => {
           minutes: Math.floor((difference / 1000 / 60) % 60),
           seconds: Math.floor((difference / 1000) % 60),
         });
+      } else {
+        // Flash sale expired, refresh
+        flashSaleAPI.getActive().then(res => {
+          if (res.data.data) setFlashSale(res.data.data);
+          else setFlashSale(null);
+        });
       }
     };
 
     calculateTimeLeft();
     const interval = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [flashSale]);
+
+  const flashProducts = flashSale?.items?.filter(item => item.isActive).map(item => ({
+    ...item.product,
+    discountPrice: item.discountPrice,
+    discountPercent: item.discountPercent,
+    stockLimit: item.stockLimit,
+    soldCount: item.soldCount,
+  })) || [];
 
   // Static Slides for Banner Carousel
   const banners = [
@@ -90,6 +117,8 @@ useEffect(() => {
     }, 6000);
     return () => clearInterval(bannerInterval);
   }, [banners.length]);
+
+
 
   return (
     <div className="space-y-12">
@@ -128,9 +157,8 @@ useEffect(() => {
             <button
               key={idx}
               onClick={() => setActiveBanner(idx)}
-              className={`w-2.5 h-2.5 rounded-full transition ${
-                idx === activeBanner ? "bg-orange-500 w-6" : "bg-slate-400 dark:bg-slate-700"
-              }`}
+              className={`w-2.5 h-2.5 rounded-full transition ${idx === activeBanner ? "bg-orange-500 w-6" : "bg-slate-400 dark:bg-slate-700"
+                }`}
             />
           ))}
         </div>
@@ -157,48 +185,102 @@ useEffect(() => {
       </div>
 
       {/* 3. Flash Sale Section */}
-      <div className="space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-1.5 h-8 bg-orange-500 rounded-full block" />
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Flame className="w-6 h-6 text-red-500 fill-current animate-pulse" />
-              <span>Flash Sales</span>
-            </h2>
-            {/* Timer count values */}
-            <div className="flex items-center gap-1.5 ml-2">
-              {Object.entries(timeLeft).map(([key, val]) => (
-                <span
-                  key={key}
-                  className="px-2 py-1 bg-red-500 text-white font-bold text-xs rounded shadow-sm min-w-8 text-center"
-                >
-                  {val.toString().padStart(2, "0")}
-                </span>
-              ))}
-            </div>
-          </div>
-          <Link
-            href="/products?isFeatured=true"
-            className="text-xs font-bold text-orange-500 dark:text-orange-400 hover:underline flex items-center gap-0.5"
-          >
-            See All Sales →
-          </Link>
-        </div>
+      {flashSale && (
+        <div className="space-y-6">
+          {/* Banner / Header Card */}
+          {flashSale.bannerImage?.url ? (
+            <div className="relative w-full h-[180px] sm:h-[240px] rounded-xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-950 flex items-center">
+              <Image src={flashSale.bannerImage.url} alt={flashSale.title} className="absolute inset-0 w-full h-full object-cover opacity-60"/>
+              
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+              <div className="relative z-10 p-6 sm:p-10 space-y-3 max-w-2xl text-white">
+                <div className="flex items-center gap-2 bg-red-600/90 text-white font-bold text-xs uppercase px-2.5 py-1 rounded-full w-fit tracking-wide animate-pulse">
+                  <Flame className="w-4 h-4 fill-current" />
+                  Flash Sale
+                </div>
+                <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-md">
+                  {flashSale.title}
+                </h2>
+                {flashSale.description && (
+                  <p className="text-sm sm:text-base text-slate-200 drop-shadow-sm max-w-lg">
+                    {flashSale.description}
+                  </p>
+                )}
 
-        {flashLoading ? (
-          <div className="flex justify-center py-20">
-            <Spinner size="lg" color="blue" />
-          </div>
-        ) : flashProducts.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-10">No flash sales active today.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {flashProducts.slice(0, 5).map((p) => (
-              <ProductCard key={p._id} product={p} />
-            ))}
-          </div>
-        )}
-      </div>
+                {/* Timer values inside banner */}
+                {flashSale.status === "active" && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <span className="text-xs text-slate-300 font-medium">Ends in:</span>
+                    <div className="flex items-center gap-1.5">
+                      {Object.entries(timeLeft).map(([key, val]) => (
+                        <div key={key} className="flex flex-col items-center">
+                          <span className="px-2.5 py-1 bg-red-600 font-bold text-sm rounded shadow-md min-w-[36px] text-center text-white">
+                            {val.toString().padStart(2, "0")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="w-1.5 h-8 bg-orange-500 rounded-full block" />
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Flame className="w-6 h-6 text-red-500 fill-current animate-pulse" />
+                    <span>{flashSale.title || "Flash Sales"}</span>
+                  </h2>
+                  {flashSale.description && (
+                    <p className="text-sm text-slate-500 mt-1">{flashSale.description}</p>
+                  )}
+                </div>
+                {/* Timer count values */}
+                {flashSale.status === "active" && (
+                  <div className="flex items-center gap-1.5 ml-2">
+                    {Object.entries(timeLeft).map(([key, val]) => (
+                      <span
+                        key={key}
+                        className="px-2 py-1 bg-red-500 text-white font-bold text-xs rounded shadow-sm min-w-8 text-center"
+                      >
+                        {val.toString().padStart(2, "0")}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {flashLoading ? (
+            <div className="flex justify-center py-20">
+              <Spinner size="lg" color="blue" />
+            </div>
+          ) : flashProducts.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-10">No products in this flash sale.</p>
+          ) : (
+            <div className="space-y-6 relative">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                {(showAllFlash ? flashProducts : flashProducts.slice(0, 4)).map((p) => (
+                  <ProductCard key={p._id} product={p} />
+                ))}
+              </div>
+              {flashProducts.length > 4 && (
+                <div className="flex justify-center mt-2 absolute -top-16 right-0">
+                  <button
+                    onClick={() => setShowAllFlash(!showAllFlash)}
+                    className="px-6 py-2 rounded-full border border-orange-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-slate-700/50 shadow-sm transition-all"
+                  >
+                    {showAllFlash ? "Show Less" : "See All"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4. Featured Categories */}
       <div className="space-y-5">
@@ -215,18 +297,18 @@ useEffect(() => {
               <Link
                 key={cat._id}
                 href={`/products?category=${cat.slug}`}
-                className="group bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 text-center flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition cursor-pointer"
+                className="group bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-md p-5 text-center flex flex-col items-center gap-3 shadow-sm hover:shadow-md transition cursor-pointer"
               >
-                <div className="w-14 h-14 bg-slate-50 dark:bg-slate-950 rounded-full flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-200 overflow-hidden">
+                <div className="w-32 h-32 relative bg-slate-50 dark:bg-slate-950 rounded flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-200 overflow-hidden">
                   {cat.image?.url ? (
-                    <img src={cat.image.url} alt={cat.name} className="w-10 h-10 object-cover rounded-full" />
+                    <Image src={cat.image.url} alt={cat.name} fill className=" object-cover "/>
                   ) : cat.icon ? (
                     <span>{cat.icon}</span>
                   ) : (
                     "📁"
                   )}
                 </div>
-                <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate w-full group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate w-full group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">
                   {cat.name}
                 </h4>
               </Link>
