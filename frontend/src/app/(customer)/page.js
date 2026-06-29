@@ -24,7 +24,7 @@ export default function Home() {
   // Queries
   const { data: featuredCatsRes, isLoading: catsLoading } = useGetFeaturedCategoriesQuery();
   const { data: featuredProductsRes, isLoading: productsLoading } = useGetProductsQuery({
-    limit: 10,
+    limit: 15,
     sortBy: "createdAt",
     order: "desc",
   });
