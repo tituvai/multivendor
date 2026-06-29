@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { selectRecentlyViewed } from "@/redux/slices/cartSlice";
 import { useGetFeaturedCategoriesQuery } from "@/redux/slices/categoriesApi";
 import { useGetProductsQuery } from "@/redux/slices/productsApi";
-import { flashSaleAPI } from "@/services/api";
+import { flashSaleAPI, bannerAPI } from "@/services/api";
 import ProductCard from "@/components/customer/ProductCard";
 import { Spinner, SectionHeader, ProductGrid } from "@/components/ui";
 import { Flame, ArrowRight, ShieldCheck, Truck, RefreshCw, Award } from "lucide-react";
@@ -90,28 +90,30 @@ export default function Home() {
     soldCount: item.soldCount,
   })) || [];
 
-  // Static Slides for Banner Carousel
-  const banners = [
-    {
-      title: "Elevate Your Style",
-      subtitle: "Summer Collection 2026 is Live",
-      desc: "Up to 50% off on verified apparel, accessories, and shoes. Experience premium quality from verified vendors.",
-      bg: "from-orange-500/10 via-amber-500/5 to-transparent",
-      image: "🛍️",
-      link: "/products?category=apparel",
-    },
-    {
-      title: "Smart Living, Smart Gadgets",
-      subtitle: "Top-Tier Electronic Brands",
-      desc: "Get industry leading warranties and official vendor support on smartphones, laptops, and appliances.",
-      bg: "from-blue-600/10 via-indigo-650/5 to-transparent",
-      image: "💻",
-      link: "/products?category=electronics",
-    },
-  ];
+  // Dynamic Banners State
+  const [banners, setBanners] = useState([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
   const [activeBanner, setActiveBanner] = useState(0);
 
+  // Fetch dynamic banners
   useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await bannerAPI.getActive({ position: "hero" });
+        setBanners(res.data.data);
+      } catch (error) {
+        console.log("No banners found");
+        setBanners([]);
+      } finally {
+        setBannersLoading(false);
+      }
+    };
+    fetchBanners();
+  }, []);
+
+  // Banner carousel auto-scroll
+  useEffect(() => {
+    if (banners.length === 0) return;
     const bannerInterval = setInterval(() => {
       setActiveBanner((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
     }, 6000);
@@ -123,46 +125,43 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {/* 1. Hero / Banner Section */}
-      <div className="relative rounded-3xl overflow-hidden h-[340px] sm:h-[420px] bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 transition-colors">
-        <div className={`absolute inset-0 bg-gradient-to-r ${banners[activeBanner].bg} flex items-center p-8 sm:p-16`}>
-          <div className="max-w-md space-y-4 z-10">
-            <span className="text-orange-500 dark:text-orange-400 font-extrabold text-sm uppercase tracking-widest block">
-              {banners[activeBanner].subtitle}
-            </span>
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
-              {banners[activeBanner].title}
-            </h1>
-            <p className="text-sm text-slate-550 dark:text-slate-300 leading-relaxed">
-              {banners[activeBanner].desc}
-            </p>
-            <div className="pt-2">
-              <Link
-                href={banners[activeBanner].link}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-orange-500 text-white hover:bg-slate-800 dark:hover:bg-orange-650 font-semibold rounded-xl shadow-lg transition"
-              >
-                <span>Shop Now</span>
-                <ArrowRight className="w-4.5 h-4.5" />
-              </Link>
-            </div>
-          </div>
-          {/* Decorative Big Emoji */}
-          <div className="absolute right-10 bottom-6 text-[150px] sm:text-[200px] opacity-25 select-none pointer-events-none hidden md:block">
-            {banners[activeBanner].image}
-          </div>
+      {bannersLoading ? (
+        <div className="relative rounded-3xl overflow-hidden h-[340px] sm:h-[420px] bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+          <Spinner size="lg" />
         </div>
+      ) : banners.length === 0 ? (
+        <div className="relative rounded-3xl overflow-hidden h-[340px] sm:h-[420px] bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+          <p className="text-gray-500">No banners available</p>
+        </div>
+      ) : (
+        <Link href={`/banner/${banners[activeBanner]._id}`} className="block">
+          <div className="relative rounded-3xl overflow-hidden h-[340px] sm:h-[420px] bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 transition-colors cursor-pointer hover:shadow-xl">
+            {banners[activeBanner].image?.url ? (
+              <img
+                src={banners[activeBanner].image.url}
+                alt="Banner"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent" />
+            )}
 
-        {/* Carousel indicators */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {banners.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveBanner(idx)}
-              className={`w-2.5 h-2.5 rounded-full transition ${idx === activeBanner ? "bg-orange-500 w-6" : "bg-slate-400 dark:bg-slate-700"
-                }`}
-            />
-          ))}
-        </div>
-      </div>
+            {/* Carousel indicators */}
+            {banners.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                {banners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => { e.preventDefault(); setActiveBanner(idx); }}
+                    className={`w-2.5 h-2.5 rounded-full transition ${idx === activeBanner ? "bg-orange-500 w-6" : "bg-white/50"
+                      }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </Link>
+      )}
 
       {/* 2. Platform Value Props */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 bg-white dark:bg-slate-900/60 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800/80 transition-colors">

@@ -45,6 +45,16 @@ export const flashSaleAPI = {
   updateSoldCount: (flashSaleId, itemId, quantity) => API.patch(`/flash-sales/${flashSaleId}/items/${itemId}`, { quantity }),
 };
 
+export const bannerAPI = {
+  getActive: (params) => API.get("/banners", { params }),
+  adminGetAll: (params) => API.get("/banners/admin/all", { params }),
+  adminGetById: (id) => API.get(`/banners/${id}`),
+  create: (data) => API.post("/banners", data),
+  update: (id, data) => API.put(`/banners/${id}`, data),
+  delete: (id) => API.delete(`/banners/${id}`),
+  toggleStatus: (id) => API.patch(`/banners/${id}/toggle`),
+};
+
 export const vendorAPI = {
   apply: (data) => API.post("/vendors/apply", data),
   getProfile: () => API.get("/vendors/profile"),

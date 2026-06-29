@@ -8,6 +8,7 @@ const vendorRouter=require('./vendor')
 const usersRouter=require('./users')
 const uploadRouter=require('./upload')
 const flashSaleRouter=require('./flashSale')
+const bannerRouter=require('./banner')
 
 router.use('/auth', authRouter)
 router.use('/categories', categoryRouter)
@@ -17,6 +18,7 @@ router.use('/vendors', vendorRouter)
 router.use('/users', usersRouter)
 router.use('/upload', uploadRouter)
 router.use('/flash-sales', flashSaleRouter)
+router.use('/banners', bannerRouter)
 
 
 

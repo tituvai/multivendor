@@ -38,6 +38,15 @@ export default function ProductCard({ product }) {
 
   const mainImageUrl = product.images?.[0]?.url || "";
 
+  // text word limited
+
+  const truncateText = (text, maxLength) => {
+  if (!text) return "";
+  return text.length > maxLength
+    ? text.substring(0, maxLength) + "..."
+    : text;
+};
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -109,7 +118,13 @@ export default function ProductCard({ product }) {
             href={`/products/${product.slug}`}
             className="text-sm font-semibold text-slate-850 dark:text-slate-100 hover:text-orange-500 dark:hover:text-orange-400 transition-colors line-clamp-2 leading-snug block"
           >
-            {product.name}
+            <span className="block md:hidden">
+              {truncateText(product.name, 30)}
+            </span>
+
+            <span className="hidden md:block line-clamp-2">
+              {product.name}
+            </span>
           </Link>
         </div>
 
