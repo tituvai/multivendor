@@ -127,7 +127,7 @@ const getAllBanners = async (req, res) => {
 // ════════════════════════════════════════════════════════════════
 const getBannerById = async (req, res) => {
   try {
-    const banner = await Banner.findById(req.params.id);
+    const banner = await Banner.findById(req.params.id).populate("category", "name slug");
     if (!banner) {
       return res.status(404).json({
         success: false,

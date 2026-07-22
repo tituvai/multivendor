@@ -189,8 +189,8 @@ export default function Home() {
           {/* Banner / Header Card */}
           {flashSale.bannerImage?.url ? (
             <div className="relative w-full h-[180px] sm:h-[240px] rounded-xl overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-950 flex items-center">
-              <Image src={flashSale.bannerImage.url} alt={flashSale.title} className="absolute inset-0 w-full h-full object-cover opacity-60"/>
-              
+              <Image src={flashSale.bannerImage.url} alt={flashSale.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
               <div className="relative z-10 p-6 sm:p-10 space-y-3 max-w-2xl text-white">
                 <div className="flex items-center gap-2 bg-red-600/90 text-white font-bold text-xs uppercase px-2.5 py-1 rounded-full w-fit tracking-wide animate-pulse">
@@ -300,7 +300,7 @@ export default function Home() {
               >
                 <div className="w-32 h-32 relative bg-slate-50 dark:bg-slate-950 rounded flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-200 overflow-hidden">
                   {cat.image?.url ? (
-                    <Image src={cat.image.url} alt={cat.name} fill className=" object-cover "/>
+                    <Image src={cat.image.url} alt={cat.name} fill className=" object-cover " />
                   ) : cat.icon ? (
                     <span>{cat.icon}</span>
                   ) : (

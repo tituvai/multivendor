@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { bannerAPI } from "@/services/api";
 import { useGetProductsQuery } from "@/redux/slices/productsApi";
 import ProductCard from "@/components/customer/ProductCard";
 import { Spinner, SectionHeader, ProductGrid } from "@/components/ui";

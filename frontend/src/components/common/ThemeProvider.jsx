@@ -32,11 +32,6 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  // Prevent flash of un-themed content during SSR
-  if (!mounted) {
-    return <div style={{ visibility: "hidden" }}>{children}</div>;
-  }
-
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
